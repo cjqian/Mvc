@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc.Razor.Compilation;
 using Microsoft.AspNetCore.Mvc.Razor.Directives;
 using Microsoft.AspNetCore.Mvc.Razor.Internal;
 using Microsoft.AspNetCore.Mvc.Razor.TagHelpers;
+using Microsoft.AspNetCore.Mvc.Razor.ViewComponentTagHelpers;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Razor.Compilation.TagHelpers;
 using Microsoft.AspNetCore.Razor.Runtime.TagHelpers;
@@ -163,8 +164,12 @@ namespace Microsoft.Extensions.DependencyInjection
 
             services.TryAddSingleton<ITagHelperTypeResolver, TagHelperTypeResolver>();
             services.TryAddSingleton<ITagHelperDescriptorFactory>(s => new TagHelperDescriptorFactory(designTime: false));
-            services.TryAddSingleton<ITagHelperDescriptorResolver, TagHelperDescriptorResolver>();
+            services.TryAddSingleton<TagHelperDescriptorResolver, TagHelperDescriptorResolver>();
 
+            // And ViewComponentTagHelper resolver.
+            services.TryAddSingleton<ViewComponentTagHelperDescriptorResolver, ViewComponentTagHelperDescriptorResolver>();
+            services.TryAddSingleton<ITagHelperDescriptorResolver, DefaultCompositeTagHelperDescriptorResolver>();
+        
             // Caches compilation artifacts across the lifetime of the application.
             services.TryAddSingleton<ICompilerCacheProvider, DefaultCompilerCacheProvider>();
 
