@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using Microsoft.AspNetCore.Mvc.ApplicationParts;
 using Microsoft.AspNetCore.Mvc.Razor.Host;
@@ -10,7 +11,7 @@ using Microsoft.AspNetCore.Razor.TagHelpers;
 
 namespace Microsoft.AspNetCore.Mvc.Razor.ViewComponentTagHelpers
 {
-    public class ViewComponentTagHelperDescriptorFactory 
+    public class ViewComponentTagHelperDescriptorFactory
     {
         private IViewComponentDescriptorProvider _descriptorProvider;
 
@@ -31,7 +32,6 @@ namespace Microsoft.AspNetCore.Mvc.Razor.ViewComponentTagHelpers
                 partManager.ApplicationParts.Add(new AssemblyPart(assembly));
                 partManager.FeatureProviders.Add(new ViewComponentFeatureProvider());
 
-                // TODO: Allow customization by user. 
                 var viewComponentDescriptorProvider = new DefaultViewComponentDescriptorProvider(partManager);
                 return viewComponentDescriptorProvider;
             }
@@ -41,57 +41,38 @@ namespace Microsoft.AspNetCore.Mvc.Razor.ViewComponentTagHelpers
             }
         }
 
-        // Create descriptors for all view components in the descriptor provider.
+        // Create view component tag helper descriptors for all view components in the descriptor provider.
         public IEnumerable<TagHelperDescriptor> CreateDescriptors()
         {
             var viewComponentDescriptors = _descriptorProvider.GetViewComponents();
-            var resolvedDescriptors = ResolveDescriptors(viewComponentDescriptors);
-            return resolvedDescriptors;
+            return CreateDescriptors(viewComponentDescriptors);
         }
 
-        // Create descriptors for only the view components in the descriptor provider
+        // Create view component tag helper descriptors for only the view components in the descriptor provider
         // from the given assembly.
         public IEnumerable<TagHelperDescriptor> CreateDescriptors(string assemblyName)
         {
-            var viewComponentDescriptors = GetViewComponentsInAssembly(assemblyName);
-            var resolvedDescriptors = ResolveDescriptors(viewComponentDescriptors);
-            return resolvedDescriptors;
+            var viewComponentDescriptors = _descriptorProvider.GetViewComponents().Where(
+      viewComponent => assemblyName.Equals(GetAssemblyName(viewComponent)));
+
+            return CreateDescriptors(viewComponentDescriptors);
         }
 
-        // Returns view component descriptors from the descriptor provider in the given assembly.
-        private IEnumerable<ViewComponentDescriptor> GetViewComponentsInAssembly(string assemblyName)
-        {
-            var viewComponents = new List<ViewComponentDescriptor>();
-            var providedViewComponents = _descriptorProvider.GetViewComponents();
-
-            foreach (var viewComponent in providedViewComponents)
-            {
-                var currentAssemblyName = GetAssemblyName(viewComponent);
-                if (currentAssemblyName.Equals(assemblyName))
-                {
-                    viewComponents.Add(viewComponent);
-                }
-            }
-
-            return viewComponents;
-        }
-
-        // Given a list of view component descriptors,
-        // returns a list of view component tag helper descriptors.
-        private IEnumerable<TagHelperDescriptor> ResolveDescriptors(
+        private IEnumerable<TagHelperDescriptor> CreateDescriptors(
             IEnumerable<ViewComponentDescriptor> viewComponentDescriptors)
         {
             var tagHelperDescriptors = new List<TagHelperDescriptor>();
+
             foreach (var viewComponentDescriptor in viewComponentDescriptors)
             {
-                var tagHelperDescriptor = ResolveDescriptor(viewComponentDescriptor);
+                var tagHelperDescriptor = CreateDescriptor(viewComponentDescriptor);
                 tagHelperDescriptors.Add(tagHelperDescriptor);
             }
 
             return tagHelperDescriptors;
         }
 
-        private TagHelperDescriptor ResolveDescriptor(ViewComponentDescriptor viewComponentDescriptor)
+        private TagHelperDescriptor CreateDescriptor(ViewComponentDescriptor viewComponentDescriptor)
         {
             // Fill in the attribute and required attribute descriptors.
             IEnumerable<TagHelperAttributeDescriptor> attributeDescriptors;
