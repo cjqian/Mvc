@@ -67,7 +67,7 @@ namespace Microsoft.AspNetCore.Mvc.Razor
 
         protected override void BuildAfterExecuteContent(CSharpCodeWriter writer, IList<Chunk> chunks)
         {
-            new ViewComponentTagHelperClassVisitor(writer, Context).Accept(chunks);
+            new ViewComponentTagHelperChunkVisitor(writer, Context).Accept(chunks);
         }
 
         protected override void DecorateChunks(CodeGeneratorContext context, IList<Chunk> chunks)

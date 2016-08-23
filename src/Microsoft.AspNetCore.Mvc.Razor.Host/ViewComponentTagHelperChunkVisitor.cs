@@ -9,12 +9,12 @@ using Microsoft.AspNetCore.Razor.TagHelpers;
 
 namespace Microsoft.AspNetCore.Mvc.Razor.Host
 {
-    public class ViewComponentTagHelperClassVisitor : CodeVisitor<CSharpCodeWriter>
+    public class ViewComponentTagHelperChunkVisitor : CodeVisitor<CSharpCodeWriter>
     {
         private GeneratedViewComponentTagHelperContext _context;
         private HashSet<TagHelperChunk> _writtenChunks;
 
-        public ViewComponentTagHelperClassVisitor(CSharpCodeWriter writer, CodeGeneratorContext context) :
+        public ViewComponentTagHelperChunkVisitor(CSharpCodeWriter writer, CodeGeneratorContext context) :
             base(writer, context)
         {
             if (writer == null)
