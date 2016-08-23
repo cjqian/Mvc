@@ -53,7 +53,7 @@ namespace Microsoft.AspNetCore.Mvc.Razor.ViewComponentTagHelpers
         public IEnumerable<TagHelperDescriptor> CreateDescriptors(string assemblyName)
         {
             var viewComponentDescriptors = _descriptorProvider.GetViewComponents().Where(
-      viewComponent => assemblyName.Equals(GetAssemblyName(viewComponent)));
+                viewComponent => assemblyName.Equals(GetAssemblyName(viewComponent)));
 
             return CreateDescriptors(viewComponentDescriptors);
         }
@@ -77,7 +77,6 @@ namespace Microsoft.AspNetCore.Mvc.Razor.ViewComponentTagHelpers
             // Fill in the attribute and required attribute descriptors.
             IEnumerable<TagHelperAttributeDescriptor> attributeDescriptors;
             IEnumerable<TagHelperRequiredAttributeDescriptor> requiredAttributeDescriptors;
-
             if (!TryGetAttributeDescriptors(viewComponentDescriptor,
                 out attributeDescriptors,
                 out requiredAttributeDescriptors))
