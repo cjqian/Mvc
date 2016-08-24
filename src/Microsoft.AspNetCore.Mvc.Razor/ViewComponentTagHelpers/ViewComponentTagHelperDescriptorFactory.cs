@@ -15,9 +15,6 @@ namespace Microsoft.AspNetCore.Mvc.Razor.ViewComponentTagHelpers
     {
         private IViewComponentDescriptorProvider _descriptorProvider;
 
-        public static readonly string ViewComponentProperty = "ViewComponentName";
-        public static readonly string ViewComponentTagHelperProperty = "ViewComponentTagHelperName";
-
         public ViewComponentTagHelperDescriptorFactory(IViewComponentDescriptorProvider descriptorProvider)
         {
             _descriptorProvider = descriptorProvider;
@@ -106,10 +103,10 @@ namespace Microsoft.AspNetCore.Mvc.Razor.ViewComponentTagHelpers
 
             // Add view component properties to the property bag.
             tagHelperDescriptor.PropertyBag.Add(
-                ViewComponentProperty,
+                ViewComponentTagHelperDescriptorConventions.ViewComponentProperty,
                 viewComponentDescriptor.ShortName);
             tagHelperDescriptor.PropertyBag.Add(
-                ViewComponentTagHelperProperty,
+                ViewComponentTagHelperDescriptorConventions.ViewComponentTagHelperProperty,
                 ViewComponentTagHelperDescriptorConventions.GetTypeName(viewComponentDescriptor));
 
             return tagHelperDescriptor;

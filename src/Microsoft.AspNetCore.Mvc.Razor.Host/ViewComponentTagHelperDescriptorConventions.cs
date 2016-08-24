@@ -10,8 +10,8 @@ namespace Microsoft.AspNetCore.Mvc.Razor.Host
         public static readonly string ViewComponentProperty = "ViewComponentName";
         public static readonly string ViewComponentTagHelperProperty = "ViewComponentTagHelperName";
 
-        public static readonly string ViewComponentTagHelperPropertyHeader = "__Generated__";
-        public static readonly string ViewComponentTagHelperPropertyFooter = "ViewComponentTagHelper";
+        private static readonly string _viewComponentTagHelperPropertyHeader = "__Generated__";
+        private static readonly string _viewComponentTagHelperPropertyFooter = "ViewComponentTagHelper";
 
         public static bool IsViewComponentDescriptor(TagHelperDescriptor descriptor)
         {
@@ -25,7 +25,7 @@ namespace Microsoft.AspNetCore.Mvc.Razor.Host
             var viewComponentTagHelperProperty = descriptor.PropertyBag[ViewComponentTagHelperProperty];
 
             // Checks correctness of view component tag helper property.
-            var pattern = $"^{ViewComponentTagHelperPropertyHeader}(.*){ViewComponentTagHelperPropertyFooter}$";
+            var pattern = $"^{_viewComponentTagHelperPropertyHeader}(.*){_viewComponentTagHelperPropertyFooter}$";
             var regex = new Regex(pattern);
             var match = regex.Match(viewComponentTagHelperProperty);
             if (!match.Success)
@@ -34,8 +34,8 @@ namespace Microsoft.AspNetCore.Mvc.Razor.Host
             }
 
             // Checks correctness of view component property.
-            var minimumLength = ViewComponentTagHelperPropertyHeader.Length +
-                ViewComponentTagHelperPropertyFooter.Length;
+            var minimumLength = _viewComponentTagHelperPropertyHeader.Length +
+                _viewComponentTagHelperPropertyFooter.Length;
 
             if (viewComponentTagHelperProperty.Length <= minimumLength)
             {
@@ -44,7 +44,7 @@ namespace Microsoft.AspNetCore.Mvc.Razor.Host
 
             var expectedLength = viewComponentTagHelperProperty.Length - minimumLength;
             var expectedProperty = viewComponentTagHelperProperty.Substring(
-                ViewComponentTagHelperPropertyHeader.Length, expectedLength);
+                _viewComponentTagHelperPropertyHeader.Length, expectedLength);
 
             return (viewComponentProperty.Equals(expectedProperty));
         }
@@ -72,8 +72,8 @@ namespace Microsoft.AspNetCore.Mvc.Razor.Host
             $"vc:{TagHelperDescriptorFactory.ToHtmlCase(descriptor.ShortName)}";
 
         public static string GetTypeName(ViewComponentDescriptor descriptor) =>
-            ViewComponentTagHelperDescriptorConventions.ViewComponentTagHelperPropertyHeader
+            _viewComponentTagHelperPropertyHeader
             + descriptor.ShortName
-            + ViewComponentTagHelperDescriptorConventions.ViewComponentTagHelperPropertyFooter;
+            + _viewComponentTagHelperPropertyFooter;
     }
 }
