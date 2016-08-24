@@ -50,6 +50,13 @@ namespace Microsoft.AspNetCore.Mvc.Razor
             _injectAttribute = injectAttribute;
         }
 
+        public override CodeGeneratorResult Generate()
+        {
+            var descriptorDecorator = new TagHelperChunkVisitor(Context);
+            descriptorDecorator.Accept(Context.ChunkTreeBuilder.Root.Children);
+            return base.Generate();
+        }
+
         protected override CSharpCodeWritingScope BuildClassDeclaration(CSharpCodeWriter writer)
         {
             if (Context.Host.DesignTimeMode &&
@@ -68,12 +75,6 @@ namespace Microsoft.AspNetCore.Mvc.Razor
         protected override void BuildAfterExecuteContent(CSharpCodeWriter writer, IList<Chunk> chunks)
         {
             new ViewComponentTagHelperChunkVisitor(writer, Context).Accept(chunks);
-        }
-
-        protected override void DecorateChunks(CodeGeneratorContext context, IList<Chunk> chunks)
-        {
-            var descriptorDecorator = new TagHelperChunkVisitor(context);
-            descriptorDecorator.Accept(chunks);
         }
 
         protected override CSharpCodeVisitor CreateCSharpCodeVisitor(
