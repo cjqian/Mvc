@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Razor.Compilation.TagHelpers;
+﻿using System.Text.RegularExpressions;
+using Microsoft.AspNetCore.Razor.Compilation.TagHelpers;
 
 namespace Microsoft.AspNetCore.Mvc.Razor.Host
 {
@@ -7,11 +8,43 @@ namespace Microsoft.AspNetCore.Mvc.Razor.Host
         public static readonly string ViewComponentProperty = "ViewComponentName";
         public static readonly string ViewComponentTagHelperProperty = "ViewComponentTagHelperName";
 
+        public static readonly string ViewComponentTagHelperPropertyHeader = "__Generated__";
+        public static readonly string ViewComponentTagHelperPropertyFooter = "ViewComponentTagHelper";
+
         public static bool IsViewComponentDescriptor(TagHelperDescriptor descriptor)
         {
-            return (descriptor.PropertyBag != null &&
-                descriptor.PropertyBag.ContainsKey(ViewComponentProperty) &&
-                descriptor.PropertyBag.ContainsKey(ViewComponentTagHelperProperty));
+            if (!descriptor.PropertyBag.ContainsKey(ViewComponentProperty) ||
+                !descriptor.PropertyBag.ContainsKey(ViewComponentTagHelperProperty))
+            {
+                return false;
+            }
+
+            var viewComponentProperty = descriptor.PropertyBag[ViewComponentProperty];
+            var viewComponentTagHelperProperty = descriptor.PropertyBag[ViewComponentTagHelperProperty];
+
+            // Checks correctness of view component tag helper property.
+            var pattern = $"^{ViewComponentTagHelperPropertyHeader}(.*){ViewComponentTagHelperPropertyFooter}$";
+            var regex = new Regex(pattern);
+            var match = regex.Match(viewComponentTagHelperProperty);
+            if (!match.Success)
+            {
+                return false;
+            }
+
+            // Checks correctness of view component property.
+            var minimumLength = ViewComponentTagHelperPropertyHeader.Length + 
+                ViewComponentTagHelperPropertyFooter.Length;
+
+            if (viewComponentTagHelperProperty.Length <= minimumLength)
+            {
+                return false;
+            }
+
+            var expectedLength = viewComponentTagHelperProperty.Length - minimumLength;
+            var expectedProperty = viewComponentTagHelperProperty.Substring(
+                ViewComponentTagHelperPropertyHeader.Length, expectedLength);
+
+            return (viewComponentProperty.Equals(expectedProperty));
         }
 
         public static string GetViewComponentName(TagHelperDescriptor descriptor)

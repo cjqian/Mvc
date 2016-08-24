@@ -15,6 +15,9 @@ namespace Microsoft.AspNetCore.Mvc.Razor.ViewComponentTagHelpers
     {
         private IViewComponentDescriptorProvider _descriptorProvider;
 
+        public static readonly string ViewComponentProperty = "ViewComponentName";
+        public static readonly string ViewComponentTagHelperProperty = "ViewComponentTagHelperName";
+
         public ViewComponentTagHelperDescriptorFactory(IViewComponentDescriptorProvider descriptorProvider)
         {
             _descriptorProvider = descriptorProvider;
@@ -98,10 +101,10 @@ namespace Microsoft.AspNetCore.Mvc.Razor.ViewComponentTagHelpers
 
             // Add view component properties to the property bag.
             tagHelperDescriptor.PropertyBag.Add(
-                ViewComponentTagHelperDescriptorConventions.ViewComponentProperty,
+                ViewComponentProperty,
                 viewComponentDescriptor.ShortName);
             tagHelperDescriptor.PropertyBag.Add(
-                ViewComponentTagHelperDescriptorConventions.ViewComponentTagHelperProperty,
+                ViewComponentTagHelperProperty,
                 GetTypeName(viewComponentDescriptor));
 
             return tagHelperDescriptor;
@@ -114,7 +117,9 @@ namespace Microsoft.AspNetCore.Mvc.Razor.ViewComponentTagHelpers
             $"vc:{TagHelperDescriptorFactory.ToHtmlCase(descriptor.ShortName)}";
 
         private string GetTypeName(ViewComponentDescriptor descriptor) =>
-            $"__Generated__{descriptor.ShortName}ViewComponentTagHelper";
+            ViewComponentTagHelperDescriptorConventions.ViewComponentTagHelperPropertyHeader
+            + descriptor.ShortName
+            + ViewComponentTagHelperDescriptorConventions.ViewComponentTagHelperPropertyFooter;
 
         // TODO: Add support for customization of HtmlTargetElement, HtmlAttributeName.
         // TODO: Add validation of view component; valid attribute names?
@@ -161,6 +166,41 @@ namespace Microsoft.AspNetCore.Mvc.Razor.ViewComponentTagHelpers
             requiredAttributeDescriptors = requiredDescriptors;
 
             return true;
+        }
+
+        public bool IsViewComponentDescriptor(TagHelperDescriptor descriptor)
+        {
+            if (!descriptor.PropertyBag.ContainsKey(ViewComponentProperty) ||
+                !descriptor.PropertyBag.ContainsKey(ViewComponentTagHelperProperty))
+            {
+                return false;
+            }
+
+            var viewComponentProperty = descriptor.PropertyBag[ViewComponentProperty];
+            var viewComponentTagHelperProperty = descriptor.PropertyBag[ViewComponentTagHelperProperty];
+
+            var viewComponents = _descriptorProvider.GetViewComponents();
+            var matchingDescriptors = viewComponents.Where(
+                viewComponent => viewComponent.ShortName.Equals(viewComponentProperty) &&
+                GetTypeName(viewComponent).Equals(viewComponentTagHelperProperty));
+
+            return (matchingDescriptors.Count() > 0);
+        }
+
+        public string GetViewComponentName(TagHelperDescriptor descriptor)
+        {
+            if (!IsViewComponentDescriptor(descriptor)) return null;
+
+            var viewComponentName = descriptor.PropertyBag[ViewComponentProperty];
+            return viewComponentName;
+        }
+
+        public string GetViewComponentTagHelperName(TagHelperDescriptor descriptor)
+        {
+            if (!IsViewComponentDescriptor(descriptor)) return null;
+
+            var viewComponentTagHelperName = descriptor.PropertyBag[ViewComponentTagHelperProperty];
+            return viewComponentTagHelperName;
         }
     }
 }
