@@ -56,7 +56,8 @@ namespace Microsoft.AspNetCore.Mvc.Razor.ViewComponentTagHelpers
         public IEnumerable<TagHelperDescriptor> CreateDescriptors(string assemblyName)
         {
             var viewComponentDescriptors = _descriptorProvider.GetViewComponents().Where(
-                viewComponent => assemblyName.Equals(GetAssemblyName(viewComponent)));
+                viewComponent => assemblyName.Equals(
+                    ViewComponentTagHelperDescriptorConventions.GetAssemblyName(viewComponent)));
 
             return CreateDescriptors(viewComponentDescriptors);
         }
@@ -89,11 +90,15 @@ namespace Microsoft.AspNetCore.Mvc.Razor.ViewComponentTagHelpers
                 throw new Exception("Unable to resolve view component descriptor to tag helper descriptor.");
             }
 
+            var assemblyName = ViewComponentTagHelperDescriptorConventions.GetAssemblyName(viewComponentDescriptor);
+            var tagName = ViewComponentTagHelperDescriptorConventions.GetTagName(viewComponentDescriptor);
+            var typeName = ViewComponentTagHelperDescriptorConventions.GetTypeName(viewComponentDescriptor);
+
             var tagHelperDescriptor = new TagHelperDescriptor
             {
-                TagName = GetTagName(viewComponentDescriptor),
-                TypeName = GetTypeName(viewComponentDescriptor),
-                AssemblyName = GetAssemblyName(viewComponentDescriptor),
+                TagName = tagName,
+                TypeName = typeName,
+                AssemblyName = assemblyName,
                 Attributes = attributeDescriptors,
                 RequiredAttributes = requiredAttributeDescriptors,
                 TagStructure = TagStructure.NormalOrSelfClosing,
@@ -105,21 +110,10 @@ namespace Microsoft.AspNetCore.Mvc.Razor.ViewComponentTagHelpers
                 viewComponentDescriptor.ShortName);
             tagHelperDescriptor.PropertyBag.Add(
                 ViewComponentTagHelperProperty,
-                GetTypeName(viewComponentDescriptor));
+                ViewComponentTagHelperDescriptorConventions.GetTypeName(viewComponentDescriptor));
 
             return tagHelperDescriptor;
         }
-
-        private string GetAssemblyName(ViewComponentDescriptor descriptor) =>
-            descriptor.TypeInfo.Assembly.GetName().Name;
-
-        private string GetTagName(ViewComponentDescriptor descriptor) =>
-            $"vc:{TagHelperDescriptorFactory.ToHtmlCase(descriptor.ShortName)}";
-
-        private string GetTypeName(ViewComponentDescriptor descriptor) =>
-            ViewComponentTagHelperDescriptorConventions.ViewComponentTagHelperPropertyHeader
-            + descriptor.ShortName
-            + ViewComponentTagHelperDescriptorConventions.ViewComponentTagHelperPropertyFooter;
 
         // TODO: Add support for customization of HtmlTargetElement, HtmlAttributeName.
         // TODO: Add validation of view component; valid attribute names?
@@ -166,41 +160,6 @@ namespace Microsoft.AspNetCore.Mvc.Razor.ViewComponentTagHelpers
             requiredAttributeDescriptors = requiredDescriptors;
 
             return true;
-        }
-
-        public bool IsViewComponentDescriptor(TagHelperDescriptor descriptor)
-        {
-            if (!descriptor.PropertyBag.ContainsKey(ViewComponentProperty) ||
-                !descriptor.PropertyBag.ContainsKey(ViewComponentTagHelperProperty))
-            {
-                return false;
-            }
-
-            var viewComponentProperty = descriptor.PropertyBag[ViewComponentProperty];
-            var viewComponentTagHelperProperty = descriptor.PropertyBag[ViewComponentTagHelperProperty];
-
-            var viewComponents = _descriptorProvider.GetViewComponents();
-            var matchingDescriptors = viewComponents.Where(
-                viewComponent => viewComponent.ShortName.Equals(viewComponentProperty) &&
-                GetTypeName(viewComponent).Equals(viewComponentTagHelperProperty));
-
-            return (matchingDescriptors.Count() > 0);
-        }
-
-        public string GetViewComponentName(TagHelperDescriptor descriptor)
-        {
-            if (!IsViewComponentDescriptor(descriptor)) return null;
-
-            var viewComponentName = descriptor.PropertyBag[ViewComponentProperty];
-            return viewComponentName;
-        }
-
-        public string GetViewComponentTagHelperName(TagHelperDescriptor descriptor)
-        {
-            if (!IsViewComponentDescriptor(descriptor)) return null;
-
-            var viewComponentTagHelperName = descriptor.PropertyBag[ViewComponentTagHelperProperty];
-            return viewComponentTagHelperName;
         }
     }
 }

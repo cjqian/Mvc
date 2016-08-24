@@ -1,5 +1,7 @@
 ﻿using System.Text.RegularExpressions;
+using Microsoft.AspNetCore.Mvc.ViewComponents;
 using Microsoft.AspNetCore.Razor.Compilation.TagHelpers;
+using Microsoft.AspNetCore.Razor.Runtime.TagHelpers;
 
 namespace Microsoft.AspNetCore.Mvc.Razor.Host
 {
@@ -32,7 +34,7 @@ namespace Microsoft.AspNetCore.Mvc.Razor.Host
             }
 
             // Checks correctness of view component property.
-            var minimumLength = ViewComponentTagHelperPropertyHeader.Length + 
+            var minimumLength = ViewComponentTagHelperPropertyHeader.Length +
                 ViewComponentTagHelperPropertyFooter.Length;
 
             if (viewComponentTagHelperProperty.Length <= minimumLength)
@@ -62,5 +64,16 @@ namespace Microsoft.AspNetCore.Mvc.Razor.Host
             var viewComponentTagHelperName = descriptor.PropertyBag[ViewComponentTagHelperProperty];
             return viewComponentTagHelperName;
         }
+
+        public static string GetAssemblyName(ViewComponentDescriptor descriptor) =>
+            descriptor.TypeInfo.Assembly.GetName().Name;
+
+        public static string GetTagName(ViewComponentDescriptor descriptor) =>
+            $"vc:{TagHelperDescriptorFactory.ToHtmlCase(descriptor.ShortName)}";
+
+        public static string GetTypeName(ViewComponentDescriptor descriptor) =>
+            ViewComponentTagHelperDescriptorConventions.ViewComponentTagHelperPropertyHeader
+            + descriptor.ShortName
+            + ViewComponentTagHelperDescriptorConventions.ViewComponentTagHelperPropertyFooter;
     }
 }
