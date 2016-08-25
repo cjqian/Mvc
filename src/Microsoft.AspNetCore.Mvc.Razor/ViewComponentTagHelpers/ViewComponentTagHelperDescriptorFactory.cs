@@ -11,14 +11,23 @@ using Microsoft.AspNetCore.Razor.TagHelpers;
 
 namespace Microsoft.AspNetCore.Mvc.Razor.ViewComponentTagHelpers
 {
+    /// <summary>
+    /// Provides methods to create tag helper representations of view components.
+    /// </summary>
     public class ViewComponentTagHelperDescriptorFactory
     {
         private IViewComponentDescriptorProvider _descriptorProvider;
 
+        /// <summary>
+        /// Creates a new ViewComponentTagHelperDescriptorFactory than creates tag helper descriptors for
+        /// view components in the given descriptorProvider.
+        /// </summary>
+        /// <param name="descriptorProvider">The provider of view component descriptors.</param>
         public ViewComponentTagHelperDescriptorFactory(IViewComponentDescriptorProvider descriptorProvider)
         {
             _descriptorProvider = descriptorProvider;
         }
+
 
         // Returns a descriptor provider that returns view components from a given assembly, or
         // null if the assembly is invalid. TODO: Allow provider customization by user.
@@ -41,20 +50,16 @@ namespace Microsoft.AspNetCore.Mvc.Razor.ViewComponentTagHelpers
             }
         }
 
-        // Create view component tag helper descriptors for all view components in the descriptor provider.
-        public IEnumerable<TagHelperDescriptor> CreateDescriptors()
-        {
-            var viewComponentDescriptors = _descriptorProvider.GetViewComponents();
-            return CreateDescriptors(viewComponentDescriptors);
-        }
-
-        // Create view component tag helper descriptors for only the view components in the descriptor provider
-        // from the given assembly.
+        /// <summary>
+        /// Creates <see cref="TagHelperDescriptor"/> representations of view components in a given assembly.
+        /// </summary>
+        /// <param name="assemblyName">The name of the assembly containing the view components to translate.</param>
+        /// <returns>A <see cref="IEnumerable{TagHelperDescriptor}"/>, one for each view component.</returns>
         public IEnumerable<TagHelperDescriptor> CreateDescriptors(string assemblyName)
         {
-            var viewComponentDescriptors = _descriptorProvider.GetViewComponents().Where(
-                viewComponent => assemblyName.Equals(
-                    ViewComponentTagHelperDescriptorConventions.GetAssemblyName(viewComponent)));
+            var viewComponentDescriptors = _descriptorProvider.GetViewComponents()
+                .Where(viewComponent => assemblyName.Equals(
+                ViewComponentTagHelperDescriptorConventions.GetAssemblyName(viewComponent)));
 
             return CreateDescriptors(viewComponentDescriptors);
         }
@@ -101,10 +106,8 @@ namespace Microsoft.AspNetCore.Mvc.Razor.ViewComponentTagHelpers
                 TagStructure = TagStructure.NormalOrSelfClosing,
             };
 
-            // Add view component properties to the property bag.
             tagHelperDescriptor.PropertyBag.Add(
-                ViewComponentTagHelperDescriptorConventions.ViewComponentProperty,
-                viewComponentDescriptor.ShortName);
+                ViewComponentTagHelperDescriptorConventions.ViewComponentProperty, viewComponentDescriptor.ShortName);
             tagHelperDescriptor.PropertyBag.Add(
                 ViewComponentTagHelperDescriptorConventions.ViewComponentTagHelperProperty,
                 ViewComponentTagHelperDescriptorConventions.GetTypeName(viewComponentDescriptor));
@@ -113,7 +116,6 @@ namespace Microsoft.AspNetCore.Mvc.Razor.ViewComponentTagHelpers
         }
 
         // TODO: Add support for customization of HtmlTargetElement, HtmlAttributeName.
-        // TODO: Add validation of view component; valid attribute names?
         private bool TryGetAttributeDescriptors(
             ViewComponentDescriptor viewComponentDescriptor,
             out IEnumerable<TagHelperAttributeDescriptor> attributeDescriptors,
