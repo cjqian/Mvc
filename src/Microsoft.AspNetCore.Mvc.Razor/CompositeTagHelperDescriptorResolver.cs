@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Microsoft.AspNetCore.Razor.Compilation.TagHelpers;
 using Microsoft.AspNetCore.Razor.Runtime.TagHelpers;
 
-namespace Microsoft.AspNetCore.Mvc.Razor.ViewComponentTagHelpers
+namespace Microsoft.AspNetCore.Mvc.Razor
 {
     public class CompositeTagHelperDescriptorResolver : ITagHelperDescriptorResolver
     {

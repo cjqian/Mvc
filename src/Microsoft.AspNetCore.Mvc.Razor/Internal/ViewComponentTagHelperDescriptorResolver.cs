@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Razor;
 using Microsoft.AspNetCore.Razor.Compilation.TagHelpers;
 using Microsoft.AspNetCore.Razor.Runtime.TagHelpers;
 
-namespace Microsoft.AspNetCore.Mvc.Razor.ViewComponentTagHelpers
+namespace Microsoft.AspNetCore.Mvc.Razor.Internal
 { 
     public class ViewComponentTagHelperDescriptorResolver : TagHelperDescriptorResolver
     {

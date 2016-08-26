@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Razor.CodeGenerators.Visitors;
 using Microsoft.AspNetCore.Razor.Compilation.TagHelpers;
 using Microsoft.AspNetCore.Razor.TagHelpers;
 
-namespace Microsoft.AspNetCore.Mvc.Razor.Host
+namespace Microsoft.AspNetCore.Mvc.Razor.Host.Internal
 {
     public class ViewComponentTagHelperChunkVisitor : CodeVisitor<CSharpCodeWriter>
     {
