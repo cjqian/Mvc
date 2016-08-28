@@ -8,7 +8,7 @@ namespace Microsoft.AspNetCore.Mvc.Razor.Internal
     public class DefaultCompositeTagHelperDescriptorResolver : CompositeTagHelperDescriptorResolver
     {
         public DefaultCompositeTagHelperDescriptorResolver(
-            TagHelperDescriptorResolver resolver1,
+            ViewComponentTagHelperDescriptorResolver resolver1,
             ViewComponentTagHelperDescriptorResolver resolver2)
             : base()
         {

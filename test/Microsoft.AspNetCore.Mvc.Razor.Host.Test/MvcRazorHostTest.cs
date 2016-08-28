@@ -113,7 +113,7 @@ namespace Microsoft.AspNetCore.Mvc.Razor
             var fileProvider = new TestFileProvider();
             var host = new MvcRazorHost(
                 new DefaultChunkTreeCache(fileProvider),
-                new TagHelperDescriptorResolver(designTime: false));
+                new AspNetCore.Razor.Runtime.TagHelpers.TagHelperDescriptorResolver(designTime: false));
 
             // Act
             var instrumented = host.EnableInstrumentation;
@@ -585,7 +585,7 @@ namespace Microsoft.AspNetCore.Mvc.Razor
         private class MvcRazorHostWithNormalizedNewLine : MvcRazorHost
         {
             public MvcRazorHostWithNormalizedNewLine(IChunkTreeCache codeTreeCache)
-                : base(codeTreeCache, new TagHelperDescriptorResolver(designTime: false))
+                : base(codeTreeCache, new AspNetCore.Razor.Runtime.TagHelpers.TagHelperDescriptorResolver(designTime: false))
             { }
 
             public override CodeGenerator DecorateCodeGenerator(
@@ -639,7 +639,7 @@ namespace Microsoft.AspNetCore.Mvc.Razor
         private class TestMvcRazorHost : MvcRazorHost
         {
             public TestMvcRazorHost(IChunkTreeCache ChunkTreeCache)
-                : base(ChunkTreeCache, new TagHelperDescriptorResolver(designTime: false))
+                : base(ChunkTreeCache, new AspNetCore.Razor.Runtime.TagHelpers.TagHelperDescriptorResolver(designTime: false))
             {
             }
 

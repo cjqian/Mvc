@@ -163,10 +163,10 @@ namespace Microsoft.Extensions.DependencyInjection
 
             services.TryAddSingleton<ITagHelperTypeResolver, TagHelperTypeResolver>();
             services.TryAddSingleton<ITagHelperDescriptorFactory>(s => new TagHelperDescriptorFactory(designTime: false));
-            services.TryAddSingleton<TagHelperDescriptorResolver, TagHelperDescriptorResolver>();
+            services.TryAddSingleton<AspNetCore.Razor.Runtime.TagHelpers.TagHelperDescriptorResolver, AspNetCore.Razor.Runtime.TagHelpers.TagHelperDescriptorResolver>();
 
             // And ViewComponentTagHelper resolver.
-            services.TryAddSingleton<ViewComponentTagHelperDescriptorResolver, ViewComponentTagHelperDescriptorResolver>();
+            services.TryAddSingleton<AspNetCore.Mvc.Razor.Internal.ViewComponentTagHelperDescriptorResolver, AspNetCore.Mvc.Razor.Internal.ViewComponentTagHelperDescriptorResolver>();
             services.TryAddSingleton<ITagHelperDescriptorResolver, DefaultCompositeTagHelperDescriptorResolver>();
 
             // Caches compilation artifacts across the lifetime of the application.
