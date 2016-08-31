@@ -14,9 +14,14 @@ namespace Microsoft.AspNetCore.Mvc.Razor
             IViewComponentHelperType = "IViewComponentHelper";
             IViewContextAwareType = "IViewContextAware";
             TagStructureType = "TagStructure";
-            ViewContextType = "ViewContext";
+            ViewContextType = "Microsoft.AspNetCore.Mvc.Rendering.ViewContext";
+
+            ContextualizeMethod = "Contextualize";
+            InvokeAsyncMethod = "InvokeAsync";
         }
 
+        public string ContextualizeMethod { get; set; }
+        public string InvokeAsyncMethod { get; set; }
         public string TagHelpersNamespace { get; set; }
         public string IViewComponentHelperType { get; set; }
         public string IViewContextAwareType { get; set; }

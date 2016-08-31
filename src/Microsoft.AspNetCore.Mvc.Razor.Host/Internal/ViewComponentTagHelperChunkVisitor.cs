@@ -1,6 +1,10 @@
-﻿using System;
+﻿// Copyright (c) .NET Foundation. All rights reserved.
+// Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Razor.Chunks;
 using Microsoft.AspNetCore.Razor.CodeGenerators;
 using Microsoft.AspNetCore.Razor.CodeGenerators.Visitors;
@@ -11,8 +15,11 @@ namespace Microsoft.AspNetCore.Mvc.Razor.Host.Internal
 {
     public class ViewComponentTagHelperChunkVisitor : CodeVisitor<CSharpCodeWriter>
     {
-        private GeneratedViewComponentTagHelperContext _context;
-        private HashSet<TagHelperChunk> _writtenChunks;
+        private readonly GeneratedViewComponentTagHelperContext _context;
+        private readonly HashSet<string> _writtenViewComponents;
+
+        private const string _viewComponentHelperVariable = "_viewComponentHelper";
+        private const string _viewContextVariable = "ViewContext";
 
         public ViewComponentTagHelperChunkVisitor(CSharpCodeWriter writer, CodeGeneratorContext context) :
             base(writer, context)
@@ -28,7 +35,7 @@ namespace Microsoft.AspNetCore.Mvc.Razor.Host.Internal
             }
 
             _context = new GeneratedViewComponentTagHelperContext();
-            _writtenChunks = new HashSet<TagHelperChunk>();
+            _writtenViewComponents = new HashSet<string>();
         }
 
         public override void Accept(Chunk chunk)
@@ -38,43 +45,37 @@ namespace Microsoft.AspNetCore.Mvc.Razor.Host.Internal
                 throw new ArgumentNullException(nameof(chunk));
             }
 
-            // Has already parsed.
-            if (_writtenChunks.Contains(chunk)) return;
-
             var parentChunk = chunk as ParentChunk;
             var tagHelperChunk = chunk as TagHelperChunk;
 
-            // If not a tag helper chunk, we check the children.
-            if (parentChunk != null && !(parentChunk is TagHelperChunk))
+            if (parentChunk != null)
             {
                 Accept(parentChunk.Children);
             }
 
-            else if (tagHelperChunk != null) // Else, we check this tag helper chunk for view component properties.
+            if (tagHelperChunk != null)
             {
-                var viewComponentDescriptors = tagHelperChunk.Descriptors.Where(
-                    descriptor => ViewComponentTagHelperDescriptorConventions.IsViewComponentDescriptor(descriptor));
-                foreach (var descriptor in viewComponentDescriptors)
-                {
-                    base.Accept(chunk);
-                    return;
-                }
+                base.Accept(chunk);
             }
         }
 
-        // Writes the view component tag helper class.
         protected override void Visit(TagHelperChunk chunk)
         {
-            if (!_writtenChunks.Contains(chunk))
-            {
-                var viewComponentDescriptors = chunk.Descriptors.Where(
-                    descriptor => ViewComponentTagHelperDescriptorConventions.IsViewComponentDescriptor(descriptor));
+            var viewComponentDescriptors = chunk.Descriptors.
+                Where(ViewComponentTagHelperDescriptorConventions.IsViewComponentDescriptor);
 
-                foreach (var descriptor in viewComponentDescriptors)
+            foreach (var descriptor in viewComponentDescriptors)
+            {
+                var shortName =
+                    descriptor.PropertyBag[ViewComponentTagHelperDescriptorConventions.ViewComponentNameKey];
+                // TODO: type name generation as a method. 
+                var typeName =
+                    $"__Generated__{shortName}ViewComponentTagHelper";
+
+                if (!_writtenViewComponents.Contains(typeName, StringComparer.Ordinal))
                 {
-                    _writtenChunks.Add(chunk);
+                    _writtenViewComponents.Add(typeName);
                     WriteClass(descriptor);
-                    return;
                 }
             }
         }
@@ -85,16 +86,18 @@ namespace Microsoft.AspNetCore.Mvc.Razor.Host.Internal
             BuildTargetElementString(descriptor);
 
             // Initialize declaration.
-            var tagHelperTypeName = $"{_context.TagHelpersNamespace}.{nameof(TagHelper)}";
+            var tagHelperTypeName = typeof(TagHelper).FullName;
 
-            var className = ViewComponentTagHelperDescriptorConventions.GetViewComponentTagHelperName(descriptor);
-      
-            using (Writer.BuildClassDeclaration("public", className, new [] { tagHelperTypeName }))
+            var shortName = descriptor.PropertyBag[ViewComponentTagHelperDescriptorConventions.ViewComponentNameKey];
+            var className = $"__Generated__{shortName}ViewComponentTagHelper";
+
+            using (Writer.BuildClassDeclaration("public", className, new[] { tagHelperTypeName }))
             {
                 // Add view component helper for reasons.
                 Writer.WriteVariableDeclaration(
                     $"private readonly {_context.IViewComponentHelperType}",
-                    $"_viewComponentHelper", "");
+                    _viewComponentHelperVariable,
+                    value: null);
 
                 // Add constructor.
                 BuildConstructorString(className);
@@ -109,35 +112,34 @@ namespace Microsoft.AspNetCore.Mvc.Razor.Host.Internal
 
         private void BuildConstructorString(string className)
         {
-            KeyValuePair<string, string> helperPair = new KeyValuePair<string, string>(
+            var helperPair = new KeyValuePair<string, string>(
                 _context.IViewComponentHelperType,
                 "viewComponentHelper");
 
             using (Writer.BuildConstructor(
                 "public",
                 className,
-                new List<KeyValuePair<string, string>>() { helperPair }))
+                new[] { helperPair }))
             {
-                Writer.WriteVariableDeclaration("", "_viewComponentHelper", "viewComponentHelper");
+                Writer.WriteStartAssignment(_viewComponentHelperVariable)
+                    .Write("viewComponentHelper")
+                    .WriteLine(";");
             }
         }
 
         private void BuildAttributeDeclarations(TagHelperDescriptor descriptor)
         {
-            // Add view context.
-
             Writer.Write("[")
-              .WriteMethodInvocation(typeof(HtmlAttributeNotBoundAttribute).FullName, false, new string[0])
+
+              .Write(typeof(HtmlAttributeNotBoundAttribute).FullName)
               .WriteParameterSeparator()
-              .Write(_context.ViewContextType)
-              .Write("]")
-              .WriteLine();
+              .Write(_viewContextVariable)
+              .WriteLine("]");
 
             Writer.WriteAutoPropertyDeclaration(
                 "public",
                 _context.ViewContextType,
-                _context.ViewContextType);
-
+                _viewContextVariable);
 
             foreach (var attribute in descriptor.Attributes)
             {
@@ -152,60 +154,51 @@ namespace Microsoft.AspNetCore.Mvc.Razor.Host.Internal
 
             using (Writer.BuildMethodDeclaration(
                     $"public override async",
-                    nameof(System.Threading.Tasks.Task),
-                    "ProcessAsync",
+                    typeof(Task).FullName,
+                    nameof(ITagHelper.ProcessAsync),
                     new Dictionary<string, string>()
                     {
-                        { $"{ _context.TagHelpersNamespace }.{nameof(TagHelperContext)}", contextVariable },
-                        { $"{ _context.TagHelpersNamespace }.{nameof(TagHelperOutput)}", outputVariable }
+                        { typeof(TagHelperContext).FullName, contextVariable },
+                        { typeof(TagHelperOutput).FullName, outputVariable }
                     }))
             {
-
                 Writer.WriteInstanceMethodInvocation(
-                    $"(({_context.IViewContextAwareType})_viewComponentHelper)",
-                    "Contextualize",
-                    new string[] { _context.ViewContextType });
+                    $"(({_context.IViewContextAwareType}){_viewComponentHelperVariable})",
+                    _context.ContextualizeMethod,
+                    new[] { _viewContextVariable });
 
-                var viewComponentName = ViewComponentTagHelperDescriptorConventions.GetViewComponentName(descriptor);
-                var viewComponentParameters = GetParametersObjectString(descriptor);
-                var methodParameters = new string[] { $"\"{viewComponentName}\"", viewComponentParameters };
-
+                var methodParameters = GetMethodParameters(descriptor);
                 var viewContentVariable = "viewContent";
-                Writer.Write("var")
-                    .Write(" ")
+                Writer.Write("var ")
                     .WriteStartAssignment(viewContentVariable)
-                    .WriteInstanceMethodInvocation("await _viewComponentHelper", "InvokeAsync", methodParameters);
-
-                Writer.WriteVariableDeclaration("", $"{outputVariable}.TagName", "");
+                    .WriteInstanceMethodInvocation($"await {_viewComponentHelperVariable}", _context.InvokeAsyncMethod, methodParameters);
+                Writer.WriteStartAssignment($"{outputVariable}.{nameof(TagHelperOutput.TagName)}")
+                    .WriteLine("null;");
                 Writer.WriteInstanceMethodInvocation(
-                    $"{outputVariable}.Content",
-                    "SetHtmlContent",
-                    new string[] { viewContentVariable });
+                    $"{outputVariable}.{nameof(TagHelperOutput.Content)}",
+                    nameof(TagHelperContent.SetHtmlContent),
+                    new[] { viewContentVariable });
             }
         }
 
-        private string GetParametersObjectString(TagHelperDescriptor descriptor)
+        private string[] GetMethodParameters(TagHelperDescriptor descriptor)
         {
             var propertyNames = descriptor.Attributes.Select(attribute => attribute.PropertyName);
             var joinedPropertyNames = string.Join(", ", propertyNames);
             var parametersString = $" new {{ { joinedPropertyNames } }}";
 
-            return parametersString;
+            var viewComponentName = descriptor.PropertyBag[
+                ViewComponentTagHelperDescriptorConventions.ViewComponentNameKey];
+            var methodParameters = new[] { $"\"{viewComponentName}\"", parametersString };
+            return methodParameters;
         }
 
         private void BuildTargetElementString(TagHelperDescriptor descriptor)
         {
-            var selfClosingTagStructure = nameof(TagStructure.NormalOrSelfClosing);
-            var tagStructure = $"{_context.TagHelpersNamespace}.{_context.TagStructureType}.{selfClosingTagStructure}";
-
             Writer.Write("[")
                 .WriteStartMethodInvocation(typeof(HtmlTargetElementAttribute).FullName)
                 .WriteStringLiteral(descriptor.FullTagName)
-                .WriteParameterSeparator()
-                .WriteStartAssignment(_context.TagStructureType)
-                .Write(tagStructure)
-                .WriteEndMethodInvocation(endLine: false)
-                .Write("]")
+                .Write(")]")
                 .WriteLine();
         }
     }
