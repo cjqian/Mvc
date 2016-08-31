@@ -67,13 +67,22 @@ namespace Microsoft.AspNetCore.Mvc.Razor
 
         protected override void BuildAfterExecuteContent(CSharpCodeWriter writer, IList<Chunk> chunks)
         {
-            new ViewComponentTagHelperClassVisitor(writer, Context).Accept(chunks);
+            if (!Context.Host.DesignTimeMode)
+            {
+                new ViewComponentTagHelperClassVisitor(writer, Context).Accept(chunks);
+            }
         }
 
-        protected override void DecorateChunks(CodeGeneratorContext context, IList<Chunk> chunks)
+
+        public override CodeGeneratorResult Generate()
         {
-            var descriptorDecorator = new TagHelperChunkVisitor(context);
-            descriptorDecorator.Accept(chunks);
+            if (!Context.Host.DesignTimeMode)
+            {
+                var descriptorDecorator = new TagHelperChunkVisitor(Context);
+                descriptorDecorator.Accept(Context.ChunkTreeBuilder.Root.Children);
+            }
+
+            return base.Generate();
         }
 
         protected override CSharpCodeVisitor CreateCSharpCodeVisitor(

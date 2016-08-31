@@ -50,7 +50,9 @@ namespace Microsoft.AspNetCore.Mvc.Razor.Host
             var viewComponentDescriptors = GetViewComponentDescriptors(chunk);
             foreach (var descriptor in viewComponentDescriptors)
             {
-                descriptor.TypeName = $"{NamespaceName}.{ClassName}.{descriptor.TypeName}";
+                var shortName =
+                    descriptor.PropertyBag[ViewComponentTagHelperDescriptorConventions.ViewComponentProperty];
+                descriptor.TypeName = $"{NamespaceName}.{ClassName}.__Generated__{shortName}ViewComponentTagHelper";
             }
         }
 

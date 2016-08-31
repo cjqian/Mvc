@@ -98,11 +98,6 @@ namespace Microsoft.AspNetCore.Mvc.Razor.ViewComponentTagHelpers
 
             var typeName = FormatTypeName(viewComponentDescriptor);
 
-            // Because this is a view component, we want to add to the property bag.
-            var propertyBag = new Dictionary<string, string>();
-            propertyBag[ViewComponentTagHelperDescriptorConventions.ViewComponentProperty] = viewComponentDescriptor.ShortName;
-            propertyBag[ViewComponentTagHelperDescriptorConventions.ViewComponentTagHelperProperty] = typeName;
-
             var tagHelperDescriptor = new TagHelperDescriptor
             {
                 TagName = FormatTagName(viewComponentDescriptor),
@@ -111,9 +106,11 @@ namespace Microsoft.AspNetCore.Mvc.Razor.ViewComponentTagHelpers
                 Attributes = attributeDescriptors,
                 RequiredAttributes = requiredAttributeDescriptors,
                 TagStructure = TagStructure.NormalOrSelfClosing,
-                PropertyBag = propertyBag
             };
 
+            tagHelperDescriptor.PropertyBag[ViewComponentTagHelperDescriptorConventions.ViewComponentProperty] = viewComponentDescriptor.ShortName;
+            tagHelperDescriptor.PropertyBag[ViewComponentTagHelperDescriptorConventions.ViewComponentTagHelperProperty] = typeName;
+            
             return tagHelperDescriptor;
         }
 

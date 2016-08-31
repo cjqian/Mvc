@@ -12,7 +12,7 @@ namespace Microsoft.AspNetCore.Mvc.Razor.Host
     public class ViewComponentTagHelperClassVisitor : CodeVisitor<CSharpCodeWriter>
     {
         private GeneratedViewComponentTagHelperContext _context;
-        private HashSet<TagHelperChunk> _writtenChunks;
+        private HashSet<string> _writtenChunks;
 
         public ViewComponentTagHelperClassVisitor(CSharpCodeWriter writer, CodeGeneratorContext context) :
             base(writer, context)
@@ -28,7 +28,7 @@ namespace Microsoft.AspNetCore.Mvc.Razor.Host
             }
 
             _context = new GeneratedViewComponentTagHelperContext();
-            _writtenChunks = new HashSet<TagHelperChunk>();
+            _writtenChunks = new HashSet<string>();
         }
 
         public override void Accept(Chunk chunk)
@@ -37,9 +37,6 @@ namespace Microsoft.AspNetCore.Mvc.Razor.Host
             {
                 throw new ArgumentNullException(nameof(chunk));
             }
-
-            // Has already parsed.
-            if (_writtenChunks.Contains(chunk)) return;
 
             var parentChunk = chunk as ParentChunk;
             var tagHelperChunk = chunk as TagHelperChunk;
@@ -65,17 +62,18 @@ namespace Microsoft.AspNetCore.Mvc.Razor.Host
         // Writes the view component tag helper class.
         protected override void Visit(TagHelperChunk chunk)
         {
-            if (!_writtenChunks.Contains(chunk))
-            {
-                var viewComponentDescriptors = chunk.Descriptors.Where(
-                    descriptor => ViewComponentTagHelperDescriptorConventions.IsViewComponentDescriptor(descriptor));
+            var viewComponentDescriptors = chunk.Descriptors.Where(
+                descriptor => ViewComponentTagHelperDescriptorConventions.IsViewComponentDescriptor(descriptor));
 
-                foreach (var descriptor in viewComponentDescriptors)
+            foreach (var descriptor in viewComponentDescriptors)
+            {
+                var shortName = descriptor.PropertyBag[ViewComponentTagHelperDescriptorConventions.ViewComponentProperty];
+                if (!_writtenChunks.Contains(shortName))
                 {
-                    _writtenChunks.Add(chunk);
+                    _writtenChunks.Add(shortName);
                     WriteClass(descriptor);
-                    return;
                 }
+                return;
             }
         }
 
@@ -88,8 +86,8 @@ namespace Microsoft.AspNetCore.Mvc.Razor.Host
             var tagHelperTypeName = $"{_context.TagHelpersNamespace}.{nameof(TagHelper)}";
 
             var className = ViewComponentTagHelperDescriptorConventions.GetViewComponentTagHelperName(descriptor);
-      
-            using (Writer.BuildClassDeclaration("public", className, new [] { tagHelperTypeName }))
+
+            using (Writer.BuildClassDeclaration("public", className, new[] { tagHelperTypeName }))
             {
                 // Add view component helper for reasons.
                 Writer.WriteVariableDeclaration(
